@@ -1,73 +1,78 @@
-# React + TypeScript + Vite
+# AOI Creator — Frontend Engineer Internship Assignment
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Stack:** React, TypeScript, Vite, Tailwind CSS, Playwright, react-leaflet (Leaflet)
 
-Currently, two official plugins are available:
+## Demo
+- Run locally: `npm install && npm run dev`
+- Default dev URL: `http://localhost:5173`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Project Structure
+(brief structure as shown earlier)
 
-## React Compiler
+## Setup
+1. `git clone <repo>`
+2. `cd frontend-aoi`
+3. `npm install`
+4. `npm run dev`
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Map library choice
+**Chosen:** Leaflet via `react-leaflet`.
 
-## Expanding the ESLint configuration
+**Why:** 
+- Native simplicity for raster WMS layers via `L.tileLayer.wms`.
+- Lightweight and well-documented.
+- Mature plugin ecosystem (draw, clustering) that helps meet bonus requirements quickly.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+**Alternatives considered:**
+- **MapLibre GL** — better for high-performance vector rendering and styling; larger setup when mixing raster WMS + vector but better if target is thousands of dynamic vector features.
+- **OpenLayers** — very powerful and granular WMS support; steeper learning curve and larger API surface.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Architecture decisions
+- UI: React components (Sidebar, MapView) with Tailwind for styling matching Figma.
+- Map needs and drawing are encapsulated in `MapView`.
+- State: React Context + hooks for AOI management; persisted to `localStorage`.
+- Tests: Playwright for E2E, tests in `tests/playwright`.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Performance considerations (1000s of points/polygons)
+- Render vector features as GeoJSON layers, not individual DOM elements.
+- Use **marker clustering** (leaflet.markercluster) or vector tiling for many markers.
+- Use Web Workers for heavy geometry operations (simplification, intersection).
+- Use lazy loading / viewport-based rendering (only render features within extent).
+- Use debouncing for expensive map events (e.g., on moveend).
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Testing strategy
+- **Playwright E2E**: map loads, WMS tiles requested, draw/persist functionality.
+- **Unit tests** (recommended): utilities (storage, geojson helpers) and small components.
+- **What I'd test given more time**: geometry simplification functions, offline fallback, accessibility keyboard interactions.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Tradeoffs made
+- Chose Leaflet for speed of prototyping & WMS ease; MapLibre/OpenLayers might be better for production at scale.
+- Persistence via `localStorage` (simple) vs backend persistence (robust) — for assignment, localStorage meets requirements and demonstrates persistence.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Production readiness (what I'd add)
+- Backend to persist AOIs per-user (API + DB).
+- Authentication & authorization.
+- ESLint + Prettier + CI pipeline, Playwright test runner in CI.
+- Accessibility improvements (ARIA on controls).
+- S3 for large tile caching or tile server proxy if necessary.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+ ## API endpoints (examples)
+
+- GET /api/aoi → list AOIs for user
+- POST /api/aoi → create new AOI (body: geojson)
+- GET /api/aoi/:id → get AOI
+- PUT /api/aoi/:id → update AOI
+- DELETE /api/aoi/:id → delete AOI
+
+## Time spent
+- Rough estimate: (fill actual times when you implement)
+  - Setup & skeleton: 2–3 hours
+  - Map integration + WMS: 2 hours
+  - Draw tools + persistence: 3 hours
+  - Playwright tests: 1.5 hours
+  - README + demo video prep: 1 hour
+
+## How to run tests
+1. `npx playwright install`
+2. `npm run test:e2e`
+
